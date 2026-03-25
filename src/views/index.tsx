@@ -49,6 +49,11 @@ function GGWDashboardView(pageProps) {
     lotoGameBank_1,
     lotoGameBank_2,
     lotoGameBank_3,
+    
+    totalGames,
+    wonRate,
+    gamesSummaryFetched,
+    gamesSummaryFetching,
   } = useDashboardContext()
 
   const { addNotification } = useNotification()
@@ -127,28 +132,34 @@ function GGWDashboardView(pageProps) {
         {/*<!-- Game Statistics -->*/}
         <section>
           <div className="flex items-center gap-3 mb-6">
-              <div className="w-1 h-6 bg-purple-500 rounded-full"></div>
-              <h2 className="text-xl font-semibold text-white uppercase tracking-wide">Game Statistics</h2>
+            <div className="w-1 h-6 bg-purple-500 rounded-full"></div>
+            <h2 className="text-xl font-semibold text-white uppercase tracking-wide">
+              {`Game Statistics`}
+            </h2>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/*<!-- Total Games -->*/}
             <div className="gradient-border rounded-xl p-5 card-hover bg-slate-900/50 backdrop-blur">
-                <div className="flex justify-between items-start mb-3">
-                    <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Total Games</span>
-                    <div className="p-2 rounded-lg bg-purple-500/10">
-                        <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                        </svg>
-                    </div>
+              <div className="flex justify-between items-start mb-3">
+                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">{`Total Games`}</span>
+                <div className="p-2 rounded-lg bg-purple-500/10">
+                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                  </svg>
                 </div>
-                <div className="text-3xl font-bold text-white mb-1">14,215</div>
-                <div className="text-xs text-emerald-400 flex items-center gap-1">
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
-                    </svg>
-                    +124 since reset
-                </div>
+              </div>
+              <div className={`text-3xl font-bold text-white mb-1 ${(gamesSummaryFetching) ? 'animate-pulse' : ''}`}>
+                {gamesSummaryFetched ? totalGames : '...'}
+              </div>
+              {/*
+              <div className="text-xs text-emerald-400 flex items-center gap-1">
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                </svg>
+                +124 since reset
+              </div>
+              */}
             </div>
 
             {/*<!-- Active Players -->*/}
@@ -227,15 +238,24 @@ function GGWDashboardView(pageProps) {
             {/*<!-- Win Rate -->*/}
             <div className="gradient-border rounded-xl p-5 card-hover bg-slate-900/50 backdrop-blur">
               <div className="flex justify-between items-start mb-3">
-                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">Win Rate</span>
+                <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  {`Win Rate`}
+                </span>
                 <div className="p-2 rounded-lg bg-emerald-500/10">
                   <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
                   </svg>
                 </div>
               </div>
-              <div className="text-3xl font-bold text-white mb-1">48.5%</div>
-              <div className="text-xs text-slate-500">Global Average</div>
+              <div className={`text-3xl font-bold text-white mb-1 ${(gamesSummaryFetching) ? 'animate-pulse' : ''}`}>
+                {gamesSummaryFetched
+                  ? `${new BigNumber(wonRate).toFixed(2)} %`
+                  : '...'
+                }
+              </div>
+              <div className="text-xs text-slate-500">
+                {`Global Average`}
+              </div>
             </div>
           </div>
         </section>
@@ -714,8 +734,11 @@ function GGWDashboardView(pageProps) {
         </section>
 
         {/*<!-- Footer -->*/}
+        
         <footer className="text-center text-sm text-slate-600 pt-8 pb-4">
-          <p>Data verified via Chainlink Oracles • <a href="#" className="text-purple-400 hover:text-purple-300 transition-colors">View Audit Report</a></p>
+          <p>
+            © Powered by <a className="text-purple-400 hover:text-purple-300 transition-colors" href="https://whitelotto.com/" target="_blank">WhiteLotto.com</a> - Lottery White Label and Turnkey Platform Provider.
+          </p>
         </footer>
       </div>
     </div>

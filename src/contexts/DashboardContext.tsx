@@ -5,6 +5,7 @@ import fetchTokenPriceUniV2 from '@/helpers_dashboard/fetchTokenPriceUniV2'
 import fetchDepositsSummary from '@/helpers_dashboard/fetchDepositsSummary'
 import fetchBurnSummary from '@/helpers_dashboard/fetchBurnSummary'
 import fetchStakeSummary from '@/helpers_dashboard/fetchStakeSummary'
+import fetchGamesSummary from '@/helpers_dashboard/fetchGamesSummary'
 
 
 import {
@@ -50,6 +51,10 @@ const DashboardContext = createContext({
   stakeInfo: false,
   stakeInfoFetched: false,
   stakeInfoFetching: true,
+  
+  totalGames: 0,
+  wonRate: 100,
+  gamesSummaryFetched: false,
 })
 
 export const useDashboardContext = () => {
@@ -182,6 +187,7 @@ export default function DashboardProvider(props) {
   const [ stakeInfoFetched, setStakeInfoFetched ] = useState(false)
   const [ stakeInfoFetching, setStakeInfoFetching ] = useState(true)
   
+  
   useEffect(() => {
     setStakeInfo(false)
     setStakeInfoFetched(false)
@@ -201,6 +207,40 @@ export default function DashboardProvider(props) {
     })
   }, [ CHAIN_ID, STAKE_CONTRACT ])
 
+  const [ totalGames, setTotalGames ] = useState(0)
+  const [ wonRate, setWonRate ] = useState(100)
+  const [ gamesSummaryFetched, setGamesSummaryFetched ] = useState(false)
+  const [ gamesSummaryFetching, setGamesSummaryFetching ] = useState(true)
+  
+  useEffect(() => {
+    if (depositsInfo && depositsInfoFetched) {
+      setGamesSummaryFetched(false)
+      setGamesSummaryFetching(true)
+      fetchGamesSummary({
+        chainId: CHAIN_ID,
+        games: depositsInfo.gamesInfo.map((gameInfo) => {
+          return {
+            type: gameInfo.gameCode,
+            address: gameInfo.gameAddress
+          }
+        })
+      }).then((answer) => {
+        const {
+          totalGames,
+          wonRate
+        } = answer
+        setTotalGames(totalGames)
+        setWonRate(wonRate)
+        setGamesSummaryFetching(false)
+        setGamesSummaryFetched(true)
+        console.log('Games summary', answer)
+      }).catch((err) => {
+        console.log('Fail fetch games summary', err)
+        setGamesSummaryFetching(false)
+      })
+    }
+  }, [ CHAIN_ID, depositsInfo, depositsInfoFetched ])
+  
   return (
     <DashboardContext.Provider value={{
       chainId: chainId,
@@ -231,6 +271,11 @@ export default function DashboardProvider(props) {
       lotoGameBank_1,
       lotoGameBank_2,
       lotoGameBank_3,
+      
+      totalGames,
+      wonRate,
+      gamesSummaryFetched,
+      gamesSummaryFetching,
     }}>
       {children}
     </DashboardContext.Provider>
