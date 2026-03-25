@@ -36,6 +36,7 @@ const fetchDepositsSummary = (options) => {
         totalDepositAmount:     { func: 'totalDepositAmount' },
         totalBankAmount:        { func: 'totalBankAmount' },
         minWithdrawAmount:      { func: 'minWithdrawAmount' },
+        gasAddress:             { func: 'gasAddress' },
         gamesInfo:              { func: 'getGames', args: [0, 0] },
         blockNumber:            { func: 'getBlockNumber', target: multicallAddress, encoder: mcI },
         blockTimeStamp:         { func: 'getCurrentBlockTimestamp', target: multicallAddress, encoder: mcI },

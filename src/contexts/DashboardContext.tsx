@@ -4,6 +4,7 @@ import fetchTokenInfo from '@/helpers_dashboard/fetchTokenInfo'
 import fetchTokenPriceUniV2 from '@/helpers_dashboard/fetchTokenPriceUniV2'
 import fetchDepositsSummary from '@/helpers_dashboard/fetchDepositsSummary'
 import fetchBurnSummary from '@/helpers_dashboard/fetchBurnSummary'
+import fetchStakeSummary from '@/helpers_dashboard/fetchStakeSummary'
 
 
 import {
@@ -14,6 +15,7 @@ import {
   DEX_FACTORY_V2,
   DEPOSIT_CONTRACT,
   BURN_MANAGER_CONTRACT,
+  STAKE_CONTRACT,
 } from '@/config'
 
 const DashboardContext = createContext({
@@ -42,7 +44,12 @@ const DashboardContext = createContext({
   //
   burnInfo: false,
   burnInfoFetching: true,
-  burnInfoFetched: false
+  burnInfoFetched: false,
+  
+  //
+  stakeInfo: false,
+  stakeInfoFetched: false,
+  stakeInfoFetching: true,
 })
 
 export const useDashboardContext = () => {
@@ -161,7 +168,29 @@ export default function DashboardProvider(props) {
       setBurnInfoFething(false)
     })
   }, [ CHAIN_ID, BURN_MANAGER_CONTRACT ])
+
+  const [ stakeInfo, setStakeInfo ] = useState(false)
+  const [ stakeInfoFetched, setStakeInfoFetched ] = useState(false)
+  const [ stakeInfoFetching, setStakeInfoFetching ] = useState(true)
   
+  useEffect(() => {
+    setStakeInfo(false)
+    setStakeInfoFetched(false)
+    setStakeInfoFetching(true)
+    fetchStakeSummary({
+      chainId: CHAIN_ID,
+      address: STAKE_CONTRACT,
+    }).then((answer) => {
+      const { info } = answer
+      setStakeInfo(info)
+      setStakeInfoFetched(true)
+      setStakeInfoFetching(false)
+      console.log('Stake summary', answer)
+    }).catch((err) => {
+      setStakeInfoFetching(false)
+      console.log('fail fetch stake summary', err)
+    })
+  }, [ CHAIN_ID, STAKE_CONTRACT ])
   return (
     <DashboardContext.Provider value={{
       chainId: chainId,
@@ -181,7 +210,11 @@ export default function DashboardProvider(props) {
       burnInfo,
       burnInfoFetched,
       burnInfoFetching,
-      
+
+      stakeInfo,
+      stakeInfoFetched,
+      stakeInfoFetching,
+
       depGamesBank,
       lotoGameBank_1,
       lotoGameBank_2,
