@@ -6,12 +6,20 @@ import { useEffect, useState } from "react"
 import AppRootWrapper from '@/components/AppRootWrapper'
 import NETWORKS from '@/contstans/NETWORKS'
 import { useDashboardContext } from '@/contexts/DashboardContext'
-import { fromWei } from '@/helpers/wei'
+import { fromWei, toWei } from '@/helpers/wei'
 import { TITLE } from '@/config'
 import LoadingIndicator from '@/components/LoadingIndicator'
 import { getDateTimeFromBlock } from '@/helpers/getDateTimeFromBlock'
 import BigNumber from "bignumber.js"
+import { getAddressLink, getShortAddress } from '@/helpers/etherscan'
+import { copyToClipboard } from '@/helpers/copyToClipboard'
+import { useNotification } from '@/contexts/NotificationContext'
 
+
+import {
+  BURN_MANAGER_CONTRACT,
+  INITIAL_SUPPLY,
+} from '@/config'
 
 function GGWDashboardView(pageProps) {
   const {
@@ -27,11 +35,44 @@ function GGWDashboardView(pageProps) {
     depositsInfo,
     depositsInfoFetched,
 
+    burnInfo,
+    burnInfoFetched,
+
     depGamesBank,
     lotoGameBank_1,
     lotoGameBank_2,
     lotoGameBank_3,
   } = useDashboardContext()
+
+  const { addNotification } = useNotification()
+  
+  let burnPercents = 100
+  if (burnInfo && burnInfoFetched) {
+    burnPercents = new BigNumber(
+      burnInfo.totalBurnAmount
+    ).dividedBy(
+      toWei(INITIAL_SUPPLY, burnInfo.decimals)
+    ).toFixed(10)
+  }
+  
+  const allGamesBank = new BigNumber(
+    depGamesBank
+  ).plus(
+    lotoGameBank_1
+  ).plus(
+    lotoGameBank_2
+  ).plus(
+    lotoGameBank_3
+  )
+  let bankPoolLoad = 100
+  if (tokenInfo && tokenInfoFetched) {
+    bankPoolLoad = new BigNumber(
+      allGamesBank
+    ).dividedBy(
+      tokenInfo.totalSupply
+    ).toFixed(10)
+  }
+  
   return (
     <>
       <div className="text-slate-300 min-h-screen p-6">
@@ -226,31 +267,59 @@ function GGWDashboardView(pageProps) {
 
                 {/*<!-- Burn Pool -->*/}
                 <div className="gradient-border rounded-xl p-6 card-hover bg-gradient-to-br from-orange-900/20 to-slate-900/50">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-2 rounded-lg bg-orange-500/20">
-                            <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path>
-                            </svg>
-                        </div>
-                        <div>
-                            <div className="text-sm font-medium text-slate-300">Burn Pool</div>
-                            <div className="text-3xl font-bold text-white">452,530 <span className="text-lg text-slate-400 font-normal">GGC</span></div>
-                        </div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-lg bg-orange-500/20">
+                      <svg className="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"></path>
+                      </svg>
                     </div>
-                    
-                    <div className="space-y-2">
-                        <div className="flex justify-between text-xs">
-                            <span className="text-slate-400">Pool Load</span>
-                            <span className="text-orange-400 font-medium">4.5%</span>
-                        </div>
-                        <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                            <div className="h-full w-[4.5%] bg-gradient-to-r from-orange-500 to-orange-400 rounded-full"></div>
-                        </div>
-                        <div className="flex justify-between text-xs text-slate-500">
-                            <span>Deflationary Impact</span>
-                            <span>Total Supply Burned</span>
-                        </div>
+                    <div>
+                      <div className="text-sm font-medium text-slate-300">
+                        {`Burn Pool`}
+                      </div>
+                      <div className="text-3xl font-bold text-white">
+                        {(burnInfo && burnInfoFetched) ? (
+                          <>{fromWei(burnInfo.totalBurnAmount, burnInfo.decimals)}</>
+                        ) : (
+                          <LoadingIndicator text={`...`} circle={false} color={``} />
+                        )}
+                        {` `}
+                        <span className="text-lg text-slate-400 font-normal">
+                          {(burnInfo && burnInfoFetched) ? (
+                            <>{burnInfo.symbol}</>
+                          ) : (
+                            <LoadingIndicator text={`...`} circle={false} color={``} />
+                          )}
+                        </span>
+                      </div>
                     </div>
+                  </div>
+                  
+                  <div className={`space-y-2 ${(burnInfo && burnInfoFetched) ? '' : 'animate-pulse'}`}>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-400">Pool Load</span>
+                      <span className="text-orange-400 font-medium">
+                        {(burnInfo && burnInfoFetched) ? (
+                          <>
+                            {burnPercents}
+                            {`%`}
+                          </>
+                        ) : (
+                          <LoadingIndicator text={`...%`} circle={false} color={``} />
+                        )}
+                      </span>
+                    </div>
+                    <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-gradient-to-r from-orange-500 to-orange-400 rounded-full"
+                        style={{ width: `${burnPercents}%` }}
+                      ></div>
+                    </div>
+                    <div className="flex justify-between text-xs text-slate-500">
+                      <span>Deflationary Impact</span>
+                      <span>Total Supply Burned</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/*<!-- Game Treasury -->*/}
@@ -270,15 +339,7 @@ function GGWDashboardView(pageProps) {
                           <>
                             {
                               fromWei(
-                                new BigNumber(
-                                  depGamesBank
-                                ).plus(
-                                  lotoGameBank_1
-                                ).plus(
-                                  lotoGameBank_2
-                                ).plus(
-                                  lotoGameBank_3
-                                ).toFixed(),
+                                allGamesBank.toFixed(),
                                 tokenInfo.decimals
                               )
                             }
@@ -297,16 +358,24 @@ function GGWDashboardView(pageProps) {
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
+                  <div className={`space-y-2 ${(tokenInfo && tokenInfoFetched) ? '' : 'animate-pulse'}`}>
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-400">Pool Load</span>
-                      <span className="text-blue-400 font-medium">85%</span>
+                      <span className="text-blue-400 font-medium">
+                        {bankPoolLoad}
+                        {`%`}
+                      </span>
                     </div>
                     <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full w-[85%] bg-gradient-to-r from-blue-500 to-blue-400 rounded-full"></div>
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full"
+                        style={{ width: `${bankPoolLoad}%` }}
+                      ></div>
                     </div>
                     <div className="flex justify-between text-xs text-slate-500">
-                      <span>Solvency Ratio: 150%</span>
+                      <span>
+                        {/*Solvency Ratio: 150%*/}
+                      </span>
                       <span>Max Risk Cap</span>
                     </div>
                   </div>
@@ -371,23 +440,58 @@ function GGWDashboardView(pageProps) {
                     <h3 className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-4">Smart Contracts</h3>
                     
                     <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-4 flex justify-between items-center group hover:border-purple-500/30 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                        <span className="text-slate-300">
+                          {`Owner Wallet`}
+                        </span>
+                      </div>
+                      
+                      {(depositsInfo && depositsInfoFetched) ? (
                         <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                            <span className="text-slate-300">Owner Wallet</span>
+                          <code className="text-xs mono text-slate-400 bg-slate-800 px-2 py-1 rounded">
+                            <>{getShortAddress(depositsInfo.owner)}</>
+                          </code>
+                          <button 
+                            onClick={() => {
+                              copyToClipboard(depositsInfo.owner)
+                              addNotification('success', 'Address of Owner copied')
+                            }}
+                            className="text-slate-500 hover:text-white transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                            </svg>
+                          </button>
+                          <a 
+                            href={getAddressLink(chainId, depositsInfo.owner)}
+                            target="_blank"
+                            className="text-slate-500 hover:text-white transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                            </svg>
+                          </a>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <code className="text-xs mono text-slate-400 bg-slate-800 px-2 py-1 rounded">0x71C7...976F</code>
+                      ) : (
+                        <LoadingIndicator text={(
+                          <div className="flex items-center gap-3">
+                            <code className="text-xs mono text-slate-400 bg-slate-800 px-2 py-1 rounded">
+                              {`0x...........`}
+                            </code>
                             <button className="text-slate-500 hover:text-white transition-colors">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                </svg>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                              </svg>
                             </button>
                             <button className="text-slate-500 hover:text-white transition-colors">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                </svg>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                              </svg>
                             </button>
-                        </div>
+                          </div>
+                        )}  circle={false} color={``} />
+                      )}
                     </div>
 
                     <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-4 flex justify-between items-center group hover:border-purple-500/30 transition-colors">
@@ -411,23 +515,37 @@ function GGWDashboardView(pageProps) {
                     </div>
 
                     <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-4 flex justify-between items-center group hover:border-purple-500/30 transition-colors">
-                        <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                            <span className="text-slate-300">Burn Address</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <code className="text-xs mono text-slate-400 bg-slate-800 px-2 py-1 rounded">0x0000...dead</code>
-                            <button className="text-slate-500 hover:text-white transition-colors">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                </svg>
-                            </button>
-                            <button className="text-slate-500 hover:text-white transition-colors">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                </svg>
-                            </button>
-                        </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                        <span className="text-slate-300">
+                          {`Burn Contract`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <code className="text-xs mono text-slate-400 bg-slate-800 px-2 py-1 rounded">
+                          {getShortAddress(BURN_MANAGER_CONTRACT)}
+                        </code>
+                        <button
+                          onClick={() => {
+                            copyToClipboard(BURN_MANAGER_CONTRACT)
+                            addNotification('success', 'Address of Burn Contract copied')
+                          }}
+                          className="text-slate-500 hover:text-white transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                          </svg>
+                        </button>
+                        <a
+                          href={getAddressLink(chainId, BURN_MANAGER_CONTRACT)}
+                          target="_blank"
+                          className="text-slate-500 hover:text-white transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                          </svg>
+                        </a>
+                      </div>
                     </div>
                 </div>
 
@@ -456,11 +574,27 @@ function GGWDashboardView(pageProps) {
                     </div>
 
                     <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-4 flex justify-between items-center group hover:border-purple-500/30 transition-colors">
-                        <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                            <span className="text-slate-300">Min Withdraw</span>
-                        </div>
-                        <span className="text-white mono font-medium">500.00 <span className="text-slate-500 text-sm">GGC</span></span>
+                      <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                        <span className="text-slate-300">
+                          {`Min Withdraw`}
+                        </span>
+                      </div>
+                      <span className="text-white mono font-medium">
+                        {(tokenInfo && tokenInfoFetched && depositsInfo && depositsInfoFetched) ? (
+                          <>{fromWei(depositsInfo.minWithdrawAmount, tokenInfo.decimals)}</>
+                        ) : (
+                          <LoadingIndicator text={`...`} circle={false} color={``} />
+                        )}
+                        {` `}
+                        <span className="text-slate-500 text-sm">
+                          {(tokenInfo && tokenInfoFetched) ? (
+                            <>{tokenInfo.symbol}</>
+                          ) : (
+                            <LoadingIndicator text={`...`} circle={false} color={``} />
+                          )}
+                        </span>
+                      </span>
                     </div>
 
                     <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-4 flex justify-between items-center group hover:border-purple-500/30 transition-colors">

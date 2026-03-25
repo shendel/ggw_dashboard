@@ -30,6 +30,7 @@ const fetchDepositsSummary = (options) => {
       target: address,
       encoder: abiI,
       calls: {
+        owner:                  { func: 'owner' },
         usersCount:             { func: 'usersCount' },
         gamesCount:             { func: 'gamesCount' },
         totalDepositAmount:     { func: 'totalDepositAmount' },

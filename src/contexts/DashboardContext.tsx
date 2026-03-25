@@ -3,6 +3,7 @@ import BigNumber from "bignumber.js"
 import fetchTokenInfo from '@/helpers_dashboard/fetchTokenInfo'
 import fetchTokenPriceUniV2 from '@/helpers_dashboard/fetchTokenPriceUniV2'
 import fetchDepositsSummary from '@/helpers_dashboard/fetchDepositsSummary'
+import fetchBurnSummary from '@/helpers_dashboard/fetchBurnSummary'
 
 
 import {
@@ -11,8 +12,10 @@ import {
   WETH_ADDRESS,
   USDT_ADDRESS,
   DEX_FACTORY_V2,
-  DEPOSIT_CONTRACT
+  DEPOSIT_CONTRACT,
+  BURN_MANAGER_CONTRACT,
 } from '@/config'
+
 const DashboardContext = createContext({
   chainId: false,
   tokenAddress: false,
@@ -34,6 +37,12 @@ const DashboardContext = createContext({
   lotoGameBank_1: new BigNumber(0),
   lotoGameBank_2: new BigNumber(0),
   lotoGameBank_3: new BigNumber(0),
+  
+  
+  //
+  burnInfo: false,
+  burnInfoFetching: true,
+  burnInfoFetched: false
 })
 
 export const useDashboardContext = () => {
@@ -126,6 +135,33 @@ export default function DashboardProvider(props) {
       setDepositsInfoFetching(false)
     })
   }, [ CHAIN_ID, DEPOSIT_CONTRACT ])
+  
+  const [ burnInfo, setBurnInfo ] = useState(false)
+  const [ burnInfoFetched, setBurnInfoFetched ] = useState(false)
+  const [ burnInfoFetching, setBurnInfoFething ] = useState(true)
+  
+  useEffect(() => {
+    setBurnInfo(false)
+    setBurnInfoFetched(false)
+    setBurnInfoFething(true)
+    
+    fetchBurnSummary({
+      chainId: CHAIN_ID,
+      address: BURN_MANAGER_CONTRACT,
+    }).then((answer) => {
+      const {
+        burnSummary
+      } = answer
+      setBurnInfo(burnSummary)
+      setBurnInfoFetched(true)
+      setBurnInfoFething(false)
+      console.log('burn summary info', answer)
+    }).catch((err) => {
+      console.log('fail fetch burn summary', err)
+      setBurnInfoFething(false)
+    })
+  }, [ CHAIN_ID, BURN_MANAGER_CONTRACT ])
+  
   return (
     <DashboardContext.Provider value={{
       chainId: chainId,
@@ -141,6 +177,10 @@ export default function DashboardProvider(props) {
       depositsInfo,
       depositsInfoFetched,
       depositsInfoFetching,
+      
+      burnInfo,
+      burnInfoFetched,
+      burnInfoFetching,
       
       depGamesBank,
       lotoGameBank_1,
