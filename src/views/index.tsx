@@ -43,6 +43,8 @@ function GGWDashboardView(pageProps) {
     stakeInfo,
     stakeInfoFetched,
 
+    platformFee,
+    
     depGamesBank,
     lotoGameBank_1,
     lotoGameBank_2,
@@ -695,11 +697,17 @@ function GGWDashboardView(pageProps) {
               </div>
 
               <div className="bg-slate-900/30 border border-slate-800 rounded-xl p-4 flex justify-between items-center group hover:border-purple-500/30 transition-colors">
-                  <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                      <span className="text-slate-300">Platform Fee</span>
-                  </div>
-                  <span className="text-white mono font-medium">2.5%</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                  <span className="text-slate-300">
+                    {`Platform Fee`}
+                  </span>
+                </div>
+                <span className="text-white mono font-medium">
+                  {platformFee}
+                  {` `}
+                  {`%`}
+                </span>
               </div>
             </div>
           </div>
@@ -707,7 +715,7 @@ function GGWDashboardView(pageProps) {
 
         {/*<!-- Footer -->*/}
         <footer className="text-center text-sm text-slate-600 pt-8 pb-4">
-            <p>Data verified via Chainlink Oracles • <a href="#" className="text-purple-400 hover:text-purple-300 transition-colors">View Audit Report</a></p>
+          <p>Data verified via Chainlink Oracles • <a href="#" className="text-purple-400 hover:text-purple-300 transition-colors">View Audit Report</a></p>
         </footer>
       </div>
     </div>

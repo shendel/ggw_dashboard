@@ -40,7 +40,7 @@ const DashboardContext = createContext({
   lotoGameBank_2: new BigNumber(0),
   lotoGameBank_3: new BigNumber(0),
   
-  
+  platformFee: 0,
   //
   burnInfo: false,
   burnInfoFetching: true,
@@ -115,6 +115,8 @@ export default function DashboardProvider(props) {
   const [ lotoGameBank_2, setLotoGameBank_2 ] = useState(new BigNumber(0))
   const [ lotoGameBank_3, setLotoGameBank_3 ] = useState(new BigNumber(0))
 
+  const [ platformFee, setPlatformFee ] = useState(0)
+  
   const [ depositsInfo, setDepositsInfo ] = useState(false)
   const [ depositsInfoFetching, setDepositsInfoFetching ] = useState(true)
   const [ depositsInfoFetched, setDepositsInfoFetched ] = useState(false)
@@ -129,14 +131,21 @@ export default function DashboardProvider(props) {
       address: DEPOSIT_CONTRACT,
     }).then((answer) => {
       const {
-        totalBankAmount
+        totalBankAmount,
+        gamesInfo
       } = answer
-      
+      console.log('deposits answer', answer)
+      let feeSum = 0
+      gamesInfo.forEach(({ stakePercent, gasPercent, burnPercent }) => {
+        feeSum = feeSum + Number(stakePercent) + Number(gasPercent) + Number(burnPercent)
+      })
+      setPlatformFee( feeSum / gamesInfo.length )
+
       setDepGamesBank(new BigNumber(totalBankAmount))
       setDepositsInfo(answer)
       setDepositsInfoFetched(true)
       setDepositsInfoFetching(false)
-      console.log('deposits answer', answer)
+      
     }).catch((err) => {
       console.log('Fail fetch deposits contracts', err)
       setDepositsInfoFetching(false)
@@ -191,6 +200,7 @@ export default function DashboardProvider(props) {
       console.log('fail fetch stake summary', err)
     })
   }, [ CHAIN_ID, STAKE_CONTRACT ])
+
   return (
     <DashboardContext.Provider value={{
       chainId: chainId,
@@ -214,6 +224,8 @@ export default function DashboardProvider(props) {
       stakeInfo,
       stakeInfoFetched,
       stakeInfoFetching,
+      
+      platformFee,
 
       depGamesBank,
       lotoGameBank_1,
